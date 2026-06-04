@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shared Tabs - Chattto</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f8f9fa;
+      color: #333;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #e9ecef;
+      padding-bottom: 20px;
+    }
+    .header-info {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .title { font-size: 24px; font-weight: bold; }
+    .date { color: #6c757d; font-size: 14px; }
+    #qr-container {
+      background: white;
+      padding: 8px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: none;
+    }
+    #qr-container img {
+      display: block;
+    }
+    .tab-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .tab-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .tab-item:last-child { border-bottom: none; }
+    .tab-link {
+      text-decoration: none;
+      color: #0056b3;
+      font-size: 15px;
+      word-break: break-all;
+    }
+    .tab-link:hover { text-decoration: underline; }
+    .favicon {
+      width: 16px;
+      height: 16px;
+    }
+    #loading, #error {
+      text-align: center;
+      padding: 40px;
+      color: #6c757d;
+    }
+    #error { color: #dc3545; display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-info">
+      <div class="title" id="session-name">Loading Shared Session...</div>
+      <div class="date" id="session-date"></div>
+      <div style="font-size: 13px; color: #6c757d; margin-top: 4px;">
+        Scan the QR code with your phone to open this session on mobile.
+      </div>
+    </div>
+    <div id="qr-container"></div>
+  </div>
+
+  <div id="loading">Fetching tabs...</div>
+  <div id="error">Could not load the shared session. It may have expired or the link is invalid.</div>
+  
+  <ul class="tab-list" id="tab-list" style="display: none;"></ul>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    function loadSession() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const dataStr = urlParams.get('data');
+
+      if (!dataStr) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+        return;
+      }
+
+      try {
+        const jsonStr = LZString.decompressFromEncodedURIComponent(dataStr);
+        if (!jsonStr) throw new Error('Failed to decompress');
+        
+        const data = JSON.parse(jsonStr);
+
+        document.getElementById('loading').style.display = 'none';
+        
+        document.getElementById('session-name').textContent = data.name || 'Shared Session';
+        document.getElementById('session-date').textContent = new Date(data.createdAt).toLocaleString();
+        
+        // Generate QR code for the current URL
+        const qrContainer = document.getElementById('qr-container');
+        qrContainer.style.display = 'block';
+        new QRCode(qrContainer, {
+          text: window.location.href,
+          width: 285,
+          height: 285,
+          colorDark : "#000000",
+          colorLight : "#ffffff",
+          correctLevel : QRCode.CorrectLevel.L
+        });
+
+        const list = document.getElementById('tab-list');
+        list.style.display = 'block';
+
+        data.tabs.forEach(t => {
+          const li = document.createElement('li');
+          li.className = 'tab-item';
+          
+          const domain = new URL(t.url).hostname;
+          const iconUrl = `https://www.google.com/s2/favicons?domain=${domain}`;
+
+          li.innerHTML = `
+            <img src="${iconUrl}" class="favicon" alt="icon" />
+            <a href="${t.url}" target="_blank" class="tab-link">${t.title}</a>
+          `;
+          list.appendChild(li);
+        });
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+      }
+    }
+
+    loadSession();
+  </script>
+</body>
+</html>
