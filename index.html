@@ -200,7 +200,6 @@
 
         const copyQrBtn = document.createElement('button');
         copyQrBtn.className = 'action-btn';
-        copyQrBtn.style.color = '#333';
         copyQrBtn.innerHTML = '📋 Copy QR Image';
         copyQrBtn.onclick = () => copyQrCode(qrDiv);
         qrContainer.appendChild(copyQrBtn);
@@ -253,7 +252,7 @@
 
     async function copyAllLinks() {
       if (!window.sessionTabsArray) return;
-      const text = window.sessionTabsArray.map(t => `${t.title}\n${t.url}`).join('\n\n');
+      const text = window.sessionTabsArray.map(t => t.url).join('\n');
       try {
         await navigator.clipboard.writeText(text);
         alert('All links copied to clipboard!');
