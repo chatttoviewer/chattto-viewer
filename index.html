@@ -57,10 +57,13 @@
     
     #qr-container {
       background: white;
-      padding: 8px;
+      padding: 16px;
       border-radius: var(--radius-sm);
       display: none;
       flex-shrink: 0;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
     }
     #qr-container img, #qr-container canvas {
       display: block;
@@ -98,6 +101,33 @@
     #loading, #error { text-align: center; padding: 40px; color: var(--color-text-muted); }
     #error { color: #e76a6a; display: none; }
 
+    .action-btn {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      color: var(--color-text);
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 160ms;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .action-btn:hover { background: var(--color-surface-offset); }
+    .action-btn.primary { background: var(--color-primary); color: white; border-color: var(--color-primary); }
+    .action-btn.primary:hover { background: #6475ff; }
+    
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      display: none;
+    }
+
     @media (max-width: 600px) {
       body { margin: 20px auto; padding: 0 15px; }
       .header { flex-direction: column; align-items: center; text-align: center; }
@@ -122,6 +152,10 @@
     <div id="loading">Fetching tabs...</div>
     <div id="error">Could not load the shared session. It may have expired or the link is invalid.</div>
     
+    <div class="list-header" id="list-header">
+      <div style="font-size: 14px; color: var(--color-text-muted);"><span id="tab-count"></span> tabs</div>
+      <button class="action-btn" onclick="copyAllLinks()">📋 Copy all links</button>
+    </div>
     <ul class="tab-list" id="tab-list" style="display: none;"></ul>
   </div>
 
@@ -152,15 +186,24 @@
         
         // Generate QR code for the current URL
         const qrContainer = document.getElementById('qr-container');
-        qrContainer.style.display = 'block';
-        new QRCode(qrContainer, {
+        qrContainer.style.display = 'flex';
+        const qrDiv = document.createElement('div');
+        new QRCode(qrDiv, {
           text: window.location.href,
-          width: 128,
-          height: 128,
+          width: 160,
+          height: 160,
           colorDark : "#000000",
           colorLight : "#ffffff",
           correctLevel : QRCode.CorrectLevel.L
         });
+        qrContainer.appendChild(qrDiv);
+
+        const copyQrBtn = document.createElement('button');
+        copyQrBtn.className = 'action-btn';
+        copyQrBtn.style.color = '#333';
+        copyQrBtn.innerHTML = '📋 Copy QR Image';
+        copyQrBtn.onclick = () => copyQrCode(qrDiv);
+        qrContainer.appendChild(copyQrBtn);
 
         // If on mobile, move the QR container to the very bottom
         if (window.innerWidth <= 600 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
@@ -171,6 +214,9 @@
 
         const list = document.getElementById('tab-list');
         list.style.display = 'block';
+        document.getElementById('list-header').style.display = 'flex';
+        document.getElementById('tab-count').textContent = tabsArray.length;
+        window.sessionTabsArray = tabsArray;
 
         tabsArray.forEach(tab => {
           const li = document.createElement('li');
@@ -202,6 +248,36 @@
         console.error(err);
         document.getElementById('loading').style.display = 'none';
         document.getElementById('error').style.display = 'block';
+      }
+    }
+
+    async function copyAllLinks() {
+      if (!window.sessionTabsArray) return;
+      const text = window.sessionTabsArray.map(t => `${t.title}\n${t.url}`).join('\n\n');
+      try {
+        await navigator.clipboard.writeText(text);
+        alert('All links copied to clipboard!');
+      } catch (err) {
+        alert('Failed to copy links: ' + err);
+      }
+    }
+
+    async function copyQrCode(qrDiv) {
+      try {
+        const canvas = qrDiv.querySelector('canvas');
+        if (canvas) {
+          canvas.toBlob(async (blob) => {
+            try {
+              const item = new ClipboardItem({ 'image/png': blob });
+              await navigator.clipboard.write([item]);
+              alert('QR Code image copied to clipboard!');
+            } catch (err) {
+              alert('Could not copy image. Your browser might not support it.');
+            }
+          });
+        }
+      } catch (err) {
+        alert('Failed to copy QR code: ' + err);
       }
     }
 
