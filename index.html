@@ -162,6 +162,13 @@
           correctLevel : QRCode.CorrectLevel.L
         });
 
+        // If on mobile, move the QR container to the very bottom
+        if (window.innerWidth <= 600 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+          const container = document.querySelector('.container');
+          qrContainer.style.margin = '30px auto 0';
+          container.appendChild(qrContainer);
+        }
+
         const list = document.getElementById('tab-list');
         list.style.display = 'block';
 
