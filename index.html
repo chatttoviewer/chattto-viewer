@@ -162,19 +162,31 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
-    function loadSession() {
+    async function loadSession() {
       const urlParams = new URLSearchParams(window.location.search);
       const dataStr = urlParams.get('data');
+      const shortId = urlParams.get('id');
 
-      if (!dataStr) {
+      if (!dataStr && !shortId) {
         document.getElementById('loading').style.display = 'none';
         document.getElementById('error').style.display = 'block';
         return;
       }
 
+      let data;
       try {
-        const decompressed = LZString.decompressFromEncodedURIComponent(dataStr);
-        const data = JSON.parse(decompressed);
+        if (shortId) {
+          // Cloudflare API Fetch
+          const res = await fetch(`https://chattto-api.chatttoviewer.workers.dev/${shortId}`);
+          if (!res.ok) throw new Error('Session not found or expired');
+          data = await res.json();
+        } else if (dataStr) {
+          // Fallback for old compressed URLs
+          const decompressed = LZString.decompressFromEncodedURIComponent(dataStr);
+          data = JSON.parse(decompressed);
+        }
+
+        if (!data) throw new Error('No data');
         
         // Handle minified properties and fallback to old properties
         const sessionName = data.n || data.name || 'Shared Session';
