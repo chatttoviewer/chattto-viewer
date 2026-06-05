@@ -128,14 +128,66 @@
       display: none;
     }
 
+    .top-nav {
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+    }
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      user-select: none;
+    }
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: #000000;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 16px;
+      color: #ffffff;
+      font-family: sans-serif;
+    }
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .logo-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--color-text);
+      line-height: 1;
+    }
+    .logo-subtitle {
+      font-size: 11px;
+      color: var(--color-text-faint);
+      margin-top: 3px;
+    }
+
     @media (max-width: 600px) {
       body { margin: 20px auto; padding: 0 15px; }
       .header { flex-direction: column; align-items: center; text-align: center; }
       .header-info { align-items: center; }
+      .top-nav { justify-content: center; margin-bottom: 24px; }
     }
   </style>
 </head>
 <body>
+
+  <div class="top-nav">
+    <div class="logo-container">
+      <div class="logo-icon">K</div>
+      <div class="logo-text">
+        <div class="logo-title">Chattto</div>
+        <div class="logo-subtitle">Tab Manager</div>
+      </div>
+    </div>
+  </div>
 
   <div class="container">
     <div class="header">
@@ -235,6 +287,7 @@
           
           const img = document.createElement('img');
           img.className = 'favicon';
+          img.loading = 'lazy';
           try {
             const urlObj = new URL(tab.url);
             img.src = `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=32`;
